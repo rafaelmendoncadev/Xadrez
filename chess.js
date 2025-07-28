@@ -3,7 +3,7 @@ class ChessGame {
     constructor() {
         this.board = this.initializeBoard();
         this.currentPlayer = 'white';
-        this.gameState = 'playing';
+        this.gameState = 'waiting'; // Aguardando seleção de nível
         this.selectedSquare = null;
         this.validMoves = [];
         this.moveHistory = [];
@@ -13,11 +13,11 @@ class ChessGame {
         this.timers = { white: 0, black: 0 };
         this.timerInterval = null;
         this.isAIThinking = false;
+        this.selectedLevel = null;
         
         this.initializeUI();
         this.setupEventListeners();
-        this.startTimer();
-        this.updateDisplay();
+        this.showLevelSelection();
     }
 
     // Inicialização do tabuleiro
@@ -817,7 +817,8 @@ class ChessGame {
                 const piece = board[row][col];
                 if (piece) {
                     const value = pieceValues[piece.type];
-                    score += piece.color === 'black' ? value : -value;
+                    // Corrigido: perspectiva do jogador branco (positivo = vantagem branca)
+                    score += piece.color === 'white' ? value : -value;
                 }
             }
         }
@@ -846,7 +847,8 @@ class ChessGame {
         for (const [row, col] of centerSquares) {
             const piece = board[row][col];
             if (piece) {
-                score += piece.color === 'black' ? 15 : -15;
+                // Corrigido: perspectiva do jogador branco
+                score += piece.color === 'white' ? 15 : -15;
             }
         }
 
@@ -879,7 +881,8 @@ class ChessGame {
                 const piece = board[row][col];
                 if (piece) {
                     const moves = this.getValidMovesForPiece(row, col, piece, board);
-                    score += piece.color === 'black' ? moves.length * 2 : -moves.length * 2;
+                    // Corrigido: perspectiva do jogador branco
+                    score += piece.color === 'white' ? moves.length * 2 : -moves.length * 2;
                 }
             }
         }
@@ -904,10 +907,13 @@ class ChessGame {
             }
             
             if (!hasWhitePawn && !hasBlackPawn) {
-                // Coluna completamente aberta
-                score += 10;
+                // Coluna completamente aberta - neutro
+                score += 0;
             } else if (!hasBlackPawn) {
-                // Coluna semi-aberta para as pretas
+                // Coluna semi-aberta para as pretas - vantagem para as pretas
+                score -= 5;
+            } else if (!hasWhitePawn) {
+                // Coluna semi-aberta para as brancas - vantagem para as brancas
                 score += 5;
             }
         }
@@ -923,10 +929,10 @@ class ChessGame {
             for (let col = 0; col < 8; col++) {
                 const piece = board[row][col];
                 if (piece && piece.type === 'pawn') {
-                    if (piece.color === 'black') {
-                        score += (7 - row) * 5; // Peões pretos avançam para cima
+                    if (piece.color === 'white') {
+                        score += (7 - row) * 5; // Peões brancos avançam para baixo
                     } else {
-                        score -= row * 5; // Peões brancos avançam para baixo
+                        score -= row * 5; // Peões pretos avançam para cima
                     }
                 }
             }
@@ -1004,12 +1010,13 @@ class ChessGame {
                 const piece = board[row][col];
                 if (piece && piece.type !== 'pawn' && piece.type !== 'king') {
                     const moves = this.getValidMovesForPiece(row, col, piece, board);
-                    score += piece.color === 'black' ? moves.length * 3 : -moves.length * 3;
+                    // Corrigido: perspectiva do jogador branco
+                    score += piece.color === 'white' ? moves.length * 3 : -moves.length * 3;
                     
                     // Bônus para peças no centro
                     const centerDistance = Math.abs(row - 3.5) + Math.abs(col - 3.5);
                     if (centerDistance < 3) {
-                        score += piece.color === 'black' ? 5 : -5;
+                        score += piece.color === 'white' ? 5 : -5;
                     }
                 }
             }
@@ -1192,19 +1199,8 @@ class ChessGame {
 
     // Controles do jogo
     newGame() {
-        this.board = this.initializeBoard();
-        this.currentPlayer = 'white';
-        this.gameState = 'playing';
-        this.selectedSquare = null;
-        this.validMoves = [];
-        this.moveHistory = [];
-        this.capturedPieces = { white: [], black: [] };
-        this.lastMove = null;
-        this.timers = { white: 0, black: 0 };
-        
-        this.clearAllHighlights();
-        this.updateDisplay();
-        this.updateGameStatus('Jogo em andamento');
+        // Mostrar seleção de nível para novo jogo
+        this.showLevelSelectionForNewGame();
     }
 
     undoMove() {
@@ -1269,6 +1265,81 @@ class ChessGame {
 
     updateGameStatus(message) {
         document.getElementById('game-status').textContent = message;
+    }
+
+    // Mostrar modal de seleção de nível
+    showLevelSelection() {
+        document.getElementById('level-modal').classList.remove('hidden');
+        this.setupLevelSelectionListeners();
+    }
+
+    // Configurar listeners para seleção de nível
+    setupLevelSelectionListeners() {
+        // Seleção de nível
+        document.querySelectorAll('.level-option').forEach(option => {
+            option.addEventListener('click', () => {
+                // Remover seleção anterior
+                document.querySelectorAll('.level-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                
+                // Selecionar novo nível
+                option.classList.add('selected');
+                this.selectedLevel = option.dataset.level;
+            });
+        });
+
+        // Botão iniciar jogo
+        document.getElementById('start-game').addEventListener('click', () => {
+            if (this.selectedLevel) {
+                this.startGameWithLevel(this.selectedLevel);
+            }
+        });
+
+        // Selecionar nível normal por padrão
+        document.querySelector('.level-option[data-level="normal"]').classList.add('selected');
+        this.selectedLevel = 'normal';
+    }
+
+    // Iniciar jogo com nível selecionado
+    startGameWithLevel(level) {
+        this.difficulty = level;
+        this.gameState = 'playing';
+        
+        // Resetar tabuleiro e estado do jogo
+        this.board = this.initializeBoard();
+        this.currentPlayer = 'white';
+        this.selectedSquare = null;
+        this.validMoves = [];
+        this.moveHistory = [];
+        this.capturedPieces = { white: [], black: [] };
+        this.lastMove = null;
+        this.timers = { white: 0, black: 0 };
+        
+        // Atualizar seletor de dificuldade no header
+        document.getElementById('difficulty').value = level;
+        
+        // Esconder modal
+        document.getElementById('level-modal').classList.add('hidden');
+        
+        // Inicializar jogo
+        this.clearAllHighlights();
+        this.startTimer();
+        this.updateDisplay();
+        this.updateGameStatus('Jogo em andamento');
+    }
+
+    // Mostrar seleção de nível para novo jogo
+    showLevelSelectionForNewGame() {
+        // Resetar seleção
+        document.querySelectorAll('.level-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        document.querySelector('.level-option[data-level="normal"]').classList.add('selected');
+        this.selectedLevel = 'normal';
+        
+        // Mostrar modal
+        document.getElementById('level-modal').classList.remove('hidden');
     }
 }
 

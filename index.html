@@ -119,6 +119,40 @@
         </div>
     </div>
 
+    <!-- Modal para seleção de nível -->
+    <div id="level-modal" class="modal">
+        <div class="modal-content">
+            <h3>Escolha o Nível da IA</h3>
+            <p>Selecione a dificuldade para a partida:</p>
+            <div class="level-options">
+                <div class="level-option" data-level="beginner">
+                    <div class="level-icon">♟</div>
+                    <div class="level-info">
+                        <h4>Iniciante</h4>
+                        <p>IA simples com movimentos aleatórios ocasionais</p>
+                    </div>
+                </div>
+                <div class="level-option" data-level="normal">
+                    <div class="level-icon">♜</div>
+                    <div class="level-info">
+                        <h4>Normal</h4>
+                        <p>IA equilibrada com estratégias básicas</p>
+                    </div>
+                </div>
+                <div class="level-option" data-level="professional">
+                    <div class="level-icon">♛</div>
+                    <div class="level-info">
+                        <h4>Profissional</h4>
+                        <p>IA avançada com estratégias complexas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="start-game" class="btn btn-primary">Iniciar Jogo</button>
+            </div>
+        </div>
+    </div>
+
     <script src="chess.js"></script>
 </body>
 </html> 
