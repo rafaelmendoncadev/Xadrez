@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xadrez - Jogo Completo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="game-header">
+            <h1>♔ Xadrez</h1>
+            <div class="game-info">
+                <div class="turn-indicator">
+                    <span class="turn-label">Turno:</span>
+                    <span id="current-turn" class="turn-player">Brancas</span>
+                </div>
+                <div class="difficulty-selector">
+                    <label for="difficulty">Dificuldade:</label>
+                    <select id="difficulty">
+                        <option value="beginner">Iniciante</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="professional">Profissional</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-main">
+            <div class="game-board-container">
+                <div class="coordinates coordinates-top">
+                    <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+                </div>
+                <div class="board-wrapper">
+                    <div class="coordinates coordinates-left">
+                        <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                    <div id="chessboard" class="chessboard"></div>
+                    <div class="coordinates coordinates-right">
+                        <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+                    </div>
+                </div>
+                <div class="coordinates coordinates-bottom">
+                    <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+                </div>
+            </div>
+
+            <div class="game-sidebar">
+                <div class="game-controls">
+                    <button id="new-game" class="btn btn-primary">Novo Jogo</button>
+                    <button id="undo-move" class="btn btn-secondary">Desfazer</button>
+                    <button id="offer-draw" class="btn btn-secondary">Oferecer Empate</button>
+                    <button id="resign" class="btn btn-danger">Desistir</button>
+                </div>
+
+                <div class="game-status">
+                    <div id="game-status" class="status-message">Jogo em andamento</div>
+                    <div id="check-indicator" class="check-indicator hidden">♔ Xeque!</div>
+                </div>
+
+                <div class="captured-pieces">
+                    <div class="captured-section">
+                        <h3>Peças Capturadas</h3>
+                        <div class="captured-list">
+                            <div class="captured-white" id="captured-white"></div>
+                            <div class="captured-black" id="captured-black"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="move-history">
+                    <h3>Histórico de Movimentos</h3>
+                    <div id="move-list" class="move-list"></div>
+                </div>
+
+                <div class="timer-section">
+                    <div class="timer">
+                        <div class="timer-label">Brancas</div>
+                        <div id="white-timer" class="timer-display">00:00</div>
+                    </div>
+                    <div class="timer">
+                        <div class="timer-label">Pretas</div>
+                        <div id="black-timer" class="timer-display">00:00</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para promoção de peão -->
+    <div id="promotion-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Escolha a peça para promoção</h3>
+            <div class="promotion-pieces">
+                <div class="promotion-piece" data-piece="queen">♕</div>
+                <div class="promotion-piece" data-piece="rook">♖</div>
+                <div class="promotion-piece" data-piece="bishop">♗</div>
+                <div class="promotion-piece" data-piece="knight">♘</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmação -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="confirm-title">Confirmação</h3>
+            <p id="confirm-message">Tem certeza?</p>
+            <div class="modal-buttons">
+                <button id="confirm-yes" class="btn btn-primary">Sim</button>
+                <button id="confirm-no" class="btn btn-secondary">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="chess.js"></script>
+</body>
+</html> 
