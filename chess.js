@@ -580,8 +580,15 @@ class ChessGame {
         this.updateGameStatus('IA está pensando...');
 
         setTimeout(() => {
-            const depth = this.getAIDepth();
-            const bestMove = this.findBestMove(depth);
+            let bestMove;
+            
+            if (this.difficulty === 'beginner') {
+                // No nível iniciante, adicionar aleatoriedade
+                bestMove = this.findBestMoveWithRandomness(2);
+            } else {
+                const depth = this.getAIDepth();
+                bestMove = this.findBestMove(depth);
+            }
             
             if (bestMove) {
                 this.makeMove(bestMove.fromRow, bestMove.fromCol, bestMove.toRow, bestMove.toCol);
@@ -590,6 +597,20 @@ class ChessGame {
             this.isAIThinking = false;
             this.updateGameStatus('Jogo em andamento');
         }, 100);
+    }
+
+    // Encontrar melhor movimento com aleatoriedade para iniciantes
+    findBestMoveWithRandomness(depth) {
+        const moves = this.getAllValidMoves('black');
+        
+        // 30% de chance de fazer um movimento aleatório
+        if (Math.random() < 0.3) {
+            const randomIndex = Math.floor(Math.random() * moves.length);
+            return moves[randomIndex];
+        }
+        
+        // 70% de chance de usar o algoritmo minimax
+        return this.findBestMove(depth);
     }
 
     // Obter profundidade baseada na dificuldade
@@ -604,8 +625,12 @@ class ChessGame {
 
     // Encontrar melhor movimento
     findBestMove(depth) {
-        const moves = this.getAllValidMoves('black');
-        let bestMove = null;
+        let moves = this.getAllValidMoves('black');
+        
+        // Ordenar movimentos para melhorar a poda alpha-beta
+        moves = this.orderMoves(moves);
+        
+        let bestMoves = [];
         let bestScore = -Infinity;
         let alpha = -Infinity;
         let beta = Infinity;
@@ -617,11 +642,69 @@ class ChessGame {
 
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = move;
+                bestMoves = [move];
+            } else if (score === bestScore) {
+                bestMoves.push(move);
             }
         }
 
-        return bestMove;
+        // Se há múltiplos movimentos com a mesma pontuação, escolher aleatoriamente
+        if (bestMoves.length > 1) {
+            const randomIndex = Math.floor(Math.random() * bestMoves.length);
+            return bestMoves[randomIndex];
+        }
+
+        return bestMoves[0] || moves[0];
+    }
+
+    // Ordenar movimentos para melhorar a poda alpha-beta
+    orderMoves(moves) {
+        return moves.sort((a, b) => {
+            let scoreA = 0;
+            let scoreB = 0;
+
+            // Capturas têm prioridade
+            const capturedA = this.board[a.toRow][a.toCol];
+            const capturedB = this.board[b.toRow][b.toCol];
+            
+            if (capturedA) {
+                scoreA += this.getPieceValue(capturedA.type) * 10;
+            }
+            if (capturedB) {
+                scoreB += this.getPieceValue(capturedB.type) * 10;
+            }
+
+            // Movimentos para o centro têm prioridade
+            const centerDistanceA = Math.abs(a.toRow - 3.5) + Math.abs(a.toCol - 3.5);
+            const centerDistanceB = Math.abs(b.toRow - 3.5) + Math.abs(b.toCol - 3.5);
+            scoreA += (7 - centerDistanceA) * 2;
+            scoreB += (7 - centerDistanceB) * 2;
+
+            // Desenvolvimento de peças na abertura
+            if (this.moveHistory.length < 10) {
+                if (a.piece.type === 'pawn' && a.fromRow === 1) scoreA += 5;
+                if (b.piece.type === 'pawn' && b.fromRow === 1) scoreB += 5;
+                if (a.piece.type === 'knight' && a.fromRow === 0) scoreA += 3;
+                if (b.piece.type === 'knight' && b.fromRow === 0) scoreB += 3;
+                if (a.piece.type === 'bishop' && a.fromRow === 0) scoreA += 3;
+                if (b.piece.type === 'bishop' && b.fromRow === 0) scoreB += 3;
+            }
+
+            return scoreB - scoreA; // Ordem decrescente
+        });
+    }
+
+    // Obter valor de uma peça
+    getPieceValue(pieceType) {
+        const values = {
+            pawn: 100,
+            knight: 320,
+            bishop: 330,
+            rook: 500,
+            queen: 900,
+            king: 20000
+        };
+        return values[pieceType] || 0;
     }
 
     // Obter todos os movimentos válidos para uma cor
@@ -763,7 +846,7 @@ class ChessGame {
         for (const [row, col] of centerSquares) {
             const piece = board[row][col];
             if (piece) {
-                score += piece.color === 'black' ? 10 : -10;
+                score += piece.color === 'black' ? 15 : -15;
             }
         }
 
@@ -771,10 +854,84 @@ class ChessGame {
         for (let col = 0; col < 8; col++) {
             const pawn = board[1][col];
             if (pawn && pawn.type === 'pawn' && pawn.color === 'black') {
-                score += 5;
+                score += 8;
             }
         }
 
+        // Mobilidade das peças
+        score += this.evaluateMobility(board);
+
+        // Controle de colunas abertas
+        score += this.evaluateOpenFiles(board);
+
+        // Peões avançados
+        score += this.evaluatePawnAdvancement(board);
+
+        return score;
+    }
+
+    // Avaliar mobilidade das peças
+    evaluateMobility(board) {
+        let score = 0;
+        
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = board[row][col];
+                if (piece) {
+                    const moves = this.getValidMovesForPiece(row, col, piece, board);
+                    score += piece.color === 'black' ? moves.length * 2 : -moves.length * 2;
+                }
+            }
+        }
+        
+        return score;
+    }
+
+    // Avaliar colunas abertas
+    evaluateOpenFiles(board) {
+        let score = 0;
+        
+        for (let col = 0; col < 8; col++) {
+            let hasWhitePawn = false;
+            let hasBlackPawn = false;
+            
+            for (let row = 0; row < 8; row++) {
+                const piece = board[row][col];
+                if (piece && piece.type === 'pawn') {
+                    if (piece.color === 'white') hasWhitePawn = true;
+                    else hasBlackPawn = true;
+                }
+            }
+            
+            if (!hasWhitePawn && !hasBlackPawn) {
+                // Coluna completamente aberta
+                score += 10;
+            } else if (!hasBlackPawn) {
+                // Coluna semi-aberta para as pretas
+                score += 5;
+            }
+        }
+        
+        return score;
+    }
+
+    // Avaliar avanço dos peões
+    evaluatePawnAdvancement(board) {
+        let score = 0;
+        
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = board[row][col];
+                if (piece && piece.type === 'pawn') {
+                    if (piece.color === 'black') {
+                        score += (7 - row) * 5; // Peões pretos avançam para cima
+                    } else {
+                        score -= row * 5; // Peões brancos avançam para baixo
+                    }
+                }
+            }
+        }
+        
         return score;
     }
 
@@ -790,6 +947,9 @@ class ChessGame {
 
         // Atividade das peças
         score += this.evaluatePieceActivity(board);
+
+        // Ataques ao rei
+        score += this.evaluateKingAttack(board);
 
         return score;
     }
@@ -844,12 +1004,57 @@ class ChessGame {
                 const piece = board[row][col];
                 if (piece && piece.type !== 'pawn' && piece.type !== 'king') {
                     const moves = this.getValidMovesForPiece(row, col, piece, board);
-                    score += piece.color === 'black' ? moves.length * 2 : -moves.length * 2;
+                    score += piece.color === 'black' ? moves.length * 3 : -moves.length * 3;
+                    
+                    // Bônus para peças no centro
+                    const centerDistance = Math.abs(row - 3.5) + Math.abs(col - 3.5);
+                    if (centerDistance < 3) {
+                        score += piece.color === 'black' ? 5 : -5;
+                    }
                 }
             }
         }
 
         return score;
+    }
+
+    // Avaliar ataques ao rei
+    evaluateKingAttack(board) {
+        let score = 0;
+        
+        const whiteKing = this.findKing('white', board);
+        const blackKing = this.findKing('black', board);
+        
+        if (whiteKing) {
+            const attackers = this.countAttackers(whiteKing.row, whiteKing.col, 'black', board);
+            score += attackers * 10;
+        }
+        
+        if (blackKing) {
+            const attackers = this.countAttackers(blackKing.row, blackKing.col, 'white', board);
+            score -= attackers * 10;
+        }
+        
+        return score;
+    }
+
+    // Contar atacantes de uma posição
+    countAttackers(row, col, attackingColor, board) {
+        let count = 0;
+        
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = board[r][c];
+                if (piece && piece.color === attackingColor) {
+                    const moves = this.getValidMovesForPiece(r, c, piece, board);
+                    if (moves.some(move => move.row === row && move.col === col)) {
+                        count++;
+                    }
+                }
+            }
+        }
+        
+        return count;
     }
 
     // Destaque de casas
@@ -1070,4 +1275,4 @@ class ChessGame {
 // Inicializar o jogo quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
     new ChessGame();
-}); 
+});

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Favicon - Xadrez</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 10px;
+        }
+        .download-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .download-btn:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>♔ Gerador de Favicon - Xadrez</h1>
+        <p>Clique nos botões abaixo para baixar os favicons gerados:</p>
+        
+        <div>
+            <canvas id="favicon16" width="16" height="16"></canvas>
+            <canvas id="favicon32" width="32" height="32"></canvas>
+            <canvas id="favicon48" width="48" height="48"></canvas>
+        </div>
+        
+        <div>
+            <button class="download-btn" onclick="downloadFavicon(16)">Baixar 16x16</button>
+            <button class="download-btn" onclick="downloadFavicon(32)">Baixar 32x32</button>
+            <button class="download-btn" onclick="downloadFavicon(48)">Baixar 48x48</button>
+        </div>
+        
+        <div>
+            <button class="download-btn" onclick="downloadSVG()">Baixar SVG</button>
+            <button class="download-btn" onclick="downloadICO()">Baixar ICO</button>
+        </div>
+    </div>
+
+    <script>
+        // Função para criar favicon
+        function createFavicon(size) {
+            const canvas = document.getElementById(`favicon${size}`);
+            const ctx = canvas.getContext('2d');
+            
+            // Limpar canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Fundo marrom escuro
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Tamanho das casas
+            const squareSize = size / 8;
+            
+            // Desenhar padrão de xadrez
+            ctx.fillStyle = '#F0D9B5';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if ((row + col) % 2 === 0) {
+                        ctx.fillRect(col * squareSize, row * squareSize, squareSize, squareSize);
+                    }
+                }
+            }
+            
+            // Desenhar rei central
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const pieceSize = size * 0.15;
+            
+            // Base do rei
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = Math.max(1, size / 32);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pieceSize, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Coroa do rei
+            ctx.fillStyle = '#FFD700';
+            const crownWidth = pieceSize * 1.5;
+            const crownHeight = pieceSize * 0.8;
+            ctx.fillRect(centerX - crownWidth/2, centerY - crownHeight/2, crownWidth, crownHeight);
+            
+            // Detalhes da coroa
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(centerX - crownWidth/2 + 2, centerY - crownHeight/2 + 2, crownWidth - 4, 2);
+            ctx.fillRect(centerX - crownWidth/2 + 2, centerY + crownHeight/2 - 4, crownWidth - 4, 2);
+        }
+        
+        // Função para baixar favicon
+        function downloadFavicon(size) {
+            const canvas = document.getElementById(`favicon${size}`);
+            const link = document.createElement('a');
+            link.download = `favicon-${size}x${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Função para baixar SVG
+        function downloadSVG() {
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+                    <rect width="32" height="32" fill="#5D4037"/>
+                    <rect x="0" y="0" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="8" y="0" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="16" y="0" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="24" y="0" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="4" y="4" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="12" y="4" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="20" y="4" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="28" y="4" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="0" y="8" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="8" y="8" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="16" y="8" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="24" y="8" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="4" y="12" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="12" y="12" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="20" y="12" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="28" y="12" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="0" y="16" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="8" y="16" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="16" y="16" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="24" y="16" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="4" y="20" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="12" y="20" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="20" y="20" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="28" y="20" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="0" y="24" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="8" y="24" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="16" y="24" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="24" y="24" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="4" y="28" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="12" y="28" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="20" y="28" width="4" height="4" fill="#F0D9B5"/>
+                    <rect x="28" y="28" width="4" height="4" fill="#F0D9B5"/>
+                    <circle cx="16" cy="16" r="3" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>
+                    <circle cx="16" cy="16" r="1.5" fill="#000000"/>
+                    <rect x="14" y="13" width="4" height="1" fill="#FFD700"/>
+                    <rect x="15" y="12" width="2" height="1" fill="#FFD700"/>
+                </svg>
+            `;
+            
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = 'favicon.svg';
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Função para baixar ICO (simplificada)
+        function downloadICO() {
+            const canvas = document.getElementById('favicon32');
+            const link = document.createElement('a');
+            link.download = 'favicon.ico';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Criar favicons quando a página carregar
+        window.onload = function() {
+            createFavicon(16);
+            createFavicon(32);
+            createFavicon(48);
+        };
+    </script>
+</body>
+</html> 
